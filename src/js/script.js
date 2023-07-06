@@ -36,48 +36,50 @@
     }
 
     const favoriteBooks = [];
+    const filters = [];
 
-    function initActions(){
-
-        const images = document.querySelectorAll('.book__image');
-
-        for(const image of images){
-        
-            image.addEventListener('dblclick', function(event){
+    function initActions() {
+        const booksList = document.querySelector('.books-list');
+      
+        booksList.addEventListener('dblclick', function(event) {
+          const clickedElement = event.target;
+      
+          if (clickedElement.offsetParent.classList.contains('book__image')) {
             event.preventDefault();
-
+      
             /* Get the book id from data-id attribute */
-            const bookId = image.dataset.id;
-
-            if(favoriteBooks.includes(bookId)){
-
-                const bookIndex = favoriteBooks.indexOf(bookId);
-                
-                if (bookIndex !== -1) {
-                  favoriteBooks.splice(bookIndex, 1);
-                }
-
-                /* Remove the 'favorite' class from the element */
-                image.classList.remove('favorite');
-
+            const bookId = clickedElement.offsetParent.dataset.id;
+      
+            if (favoriteBooks.includes(bookId)) {
+              /* Remove the book id from favoriteBooks array */
+              const bookIndex = favoriteBooks.indexOf(bookId);
+              if (bookIndex !== -1) {
+                favoriteBooks.splice(bookIndex, 1);
+              }
+      
+              /* Remove the 'favorite' class from the element */
+              clickedElement.offsetParent.classList.remove('favorite');
             } else {
+              /* Add 'favorite' class to the clicked element */
+              clickedElement.offsetParent.classList.add('favorite');
+      
+              /* Add the book id to favoriteBooks array */
+              favoriteBooks.push(bookId);
+      
+              /* Log the updated favoriteBooks array */
+              console.log('favoriteBooks:', favoriteBooks);
+            }
+          }
+        });
 
-                /* Add 'favorite' class to the clicked element */
-                image.classList.add('favorite');
+        const form = document.querySelector('.filters');
 
-                /* Add the book id to favoriteBooks array */
-                favoriteBooks.push(bookId);
+        form.addEventListener('click', function(event){
+            event.preventDefault();
+        });
+      }
 
-                /* Log the updated favoriteBooks array */
-                console.log('favoriteBooks:', favoriteBooks);
-
-                }
-            });
-        }
-    }
-
+    
     render();
     initActions();
-
-   
 }
