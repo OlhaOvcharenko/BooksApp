@@ -20,6 +20,9 @@
       const book = allBooks[bookId];
       console.log('book', book);
 
+      book.ratingBgc = determineRatingBgc(book.rating);
+      book.ratingWidth = book.rating * 10;
+
       /* generate HTML based on template */
       const generatedHTML = template.templateBook(book);
         
@@ -36,10 +39,11 @@
   }
 
   const favoriteBooks = [];
-
+  
   function initActions() {
+
     const booksList = document.querySelector('.books-list');
-      
+  
     booksList.addEventListener('dblclick', function(event) {
       const clickedElement = event.target;
      
@@ -72,14 +76,66 @@
       }
     });
 
-    const form = document.querySelector('.filters');
-
-    form.addEventListener('click', function(event){
-      event.preventDefault();
+    form.addEventListener('click', function(event) {
+      const clickedElement = event.target;
+  
+      if (
+        clickedElement.tagName === 'INPUT' &&
+        clickedElement.type === 'checkbox' &&
+        clickedElement.name === 'filter'
+      ) {
+        console.log('Value of clicked checkbox:', clickedElement.value);
+        if (clickedElement.checked) {
+          filters.push(clickedElement.value);
+        } else {
+          const index = filters.indexOf(clickedElement.value);
+          if (index !== -1) {
+            filters.splice(index, 1);
+          }
+        }
+        filtersBook();
+      }
     });
   }
 
-    
+  const filters = [];
+
+  const form = document.querySelector('.filters');
+
+  function filtersBook(){
+
+    for(const book of dataSource.books ) {
+
+      let shouldBeHidden = false;
+
+      for(const filter of filters) {
+        if(!book.details[filter]) {
+          shouldBeHidden = true;
+          break;
+        }
+      }
+
+      const bookFiltered = document.querySelector(`[data-id="${book.id}"]`);
+
+      if (shouldBeHidden) {
+        bookFiltered.classList.add('hidden');
+      } else {
+        bookFiltered.classList.remove('hidden');
+      }
+    }
+  }
+
+  function determineRatingBgc(rating){
+    if (rating <= 6)
+      return 'linear-gradient(to bottom,  #fefcea 0%, #f1da36 100%)';
+    else if (rating > 6 && rating <= 8)
+      return 'linear-gradient(to bottom, #b4df5b 0%,#b4df5b 100%)';
+    else if (rating > 8 && rating <= 9)
+      return 'linear-gradient(to bottom, #299a0b 0%, #299a0b 100%)';
+    else if (rating > 9)
+      return 'linear-gradient(to bottom, #ff0084 0%,#ff0084 100%)';
+  }
+   
   render();
   initActions();
 }
