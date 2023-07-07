@@ -1,141 +1,152 @@
 {
   'use strict';
   const select = {
-    templateOf: {
-      booksList: '.books-list',
-      booksItems: '#template-book',
+  
+    templateOf:{
+      booksTemplate: '#template-book',
+    },
+
+    listOf: {
+      books: '.books-list',
     }
+
   };
 
-  const template = {
-    templateBook: Handlebars.compile(document.querySelector(select.templateOf.booksItems).innerHTML),
-  };
+  class BooksList {
+  
+    constructor(){
 
-  function render() {
+      const thisBooksList = this;
+      console.log(thisBooksList);
 
-    const allBooks = dataSource.books;
-
-    for(let bookId in allBooks ) {
-
-      const book = allBooks[bookId];
-      console.log('book', book);
-
-      book.ratingBgc = determineRatingBgc(book.rating);
-      book.ratingWidth = book.rating * 10;
-
-      /* generate HTML based on template */
-      const generatedHTML = template.templateBook(book);
-        
-      /* Create element using utils.createDOMFromHTML */
-      const item  = utils.createDOMFromHTML(generatedHTML);
-        
-      /* Find list of books */
-      const menuOfBooks = document.querySelector(select.templateOf.booksList);
-
-      /* add element to menu */
-      menuOfBooks.appendChild(item);
+      this.filters = [];
+      this.favoriteBooks = [];
+    
+      this.initData();
+      this.render();
+      this.getElements();
+      this.initActions();
+  
     }
 
-  }
+    initData(){
+      this.data = dataSource.books;
+    }
 
-  const favoriteBooks = [];
-  
-  function initActions() {
+    render() {
+      const template = {
+        templateBook: Handlebars.compile(document.querySelector(select.templateOf.booksTemplate).innerHTML),
+      };
 
-    const booksList = document.querySelector('.books-list');
+      for (const book of this.data) {
+        book.ratingBgc = this.determineRatingBgc(book.rating);
+        book.ratingWidth = book.rating * 10;
   
-    booksList.addEventListener('dblclick', function(event) {
-      const clickedElement = event.target;
-     
-      if (clickedElement.offsetParent.classList.contains('book__image')) {
-        event.preventDefault();
+        const generatedHTML = template.templateBook(book);
+        const itemHTML = utils.createDOMFromHTML(generatedHTML);
+  
+        const menuOfBooks = document.querySelector(select.listOf.books);
+        menuOfBooks.appendChild(itemHTML);
+      }
+    }
+
+    getElements(){
+      this.dom = {};
+      this.dom.booksList = document.querySelector(select.listOf.books);
+      this.dom.form = document.querySelector('.filters');
+    }
+
+    initActions() {
+
+      this.dom.booksList.addEventListener('dblclick', (event) => {
+        const clickedElement = event.target;
       
-        /* Get the book id from data-id attribute */
-        const bookId = clickedElement.offsetParent.dataset.id;
-      
-        if (favoriteBooks.includes(bookId)) {
-          /* Remove the book id from favoriteBooks array */
-          const bookIndex = favoriteBooks.indexOf(bookId);
-          if (bookIndex !== -1) {
-            favoriteBooks.splice(bookIndex, 1);
+        if (clickedElement.offsetParent.classList.contains('book__image')) {
+          event.preventDefault();
+        
+          /* Get the book id from data-id attribute */
+          const bookId = clickedElement.offsetParent.dataset.id;
+        
+          if (this.favoriteBooks.includes(bookId)) {
+            /* Remove the book id from favoriteBooks array */
+            const bookIndex = this.favoriteBooks.indexOf(bookId);
+            if (bookIndex !== -1) {
+              this.favoriteBooks.splice(bookIndex, 1);
+            }
+        
+            /* Remove the 'favorite' class from the element */
+            clickedElement.offsetParent.classList.remove('favorite');
+
+          } else {
+            /* Add 'favorite' class to the clicked element */
+            clickedElement.offsetParent.classList.add('favorite');
+        
+            /* Add the book id to favoriteBooks array */
+            this.favoriteBooks.push(bookId);
+        
+            /* Log the updated favoriteBooks array */
+            console.log('favoriteBooks:', this.favoriteBooks);
           }
-      
-          /* Remove the 'favorite' class from the element */
-          clickedElement.offsetParent.classList.remove('favorite');
-
-        } else {
-          /* Add 'favorite' class to the clicked element */
-          clickedElement.offsetParent.classList.add('favorite');
-      
-          /* Add the book id to favoriteBooks array */
-          favoriteBooks.push(bookId);
-      
-          /* Log the updated favoriteBooks array */
-          console.log('favoriteBooks:', favoriteBooks);
         }
-      }
-    });
+      });
 
-    form.addEventListener('click', function(event) {
-      const clickedElement = event.target;
-  
-      if (
-        clickedElement.tagName === 'INPUT' &&
-        clickedElement.type === 'checkbox' &&
-        clickedElement.name === 'filter'
-      ) {
-        console.log('Value of clicked checkbox:', clickedElement.value);
-        if (clickedElement.checked) {
-          filters.push(clickedElement.value);
-        } else {
-          const index = filters.indexOf(clickedElement.value);
-          if (index !== -1) {
-            filters.splice(index, 1);
+      this.dom.form.addEventListener('click', (event) => {
+        const clickedElement = event.target;
+    
+        if (
+          clickedElement.tagName === 'INPUT' &&
+          clickedElement.type === 'checkbox' &&
+          clickedElement.name === 'filter'
+        ) {
+          console.log('Value of clicked checkbox:', clickedElement.value);
+          if (clickedElement.checked) {
+            this.filters.push(clickedElement.value);
+          } else {
+            const index = this.filters.indexOf(clickedElement.value);
+            if (index !== -1) {
+              this.filters.splice(index, 1);
+            }
+          }
+          this.filtersBook();
+        }
+      });
+    }
+
+    filtersBook(){
+
+      for(const book of this.data ) {
+
+        let shouldBeHidden = false;
+
+        for(const filter of this.filters) {
+          if(!book.details[filter]) {
+            shouldBeHidden = true;
+            break;
           }
         }
-        filtersBook();
-      }
-    });
-  }
 
-  const filters = [];
+        const bookFiltered = document.querySelector(`[data-id="${book.id}"]`);
 
-  const form = document.querySelector('.filters');
-
-  function filtersBook(){
-
-    for(const book of dataSource.books ) {
-
-      let shouldBeHidden = false;
-
-      for(const filter of filters) {
-        if(!book.details[filter]) {
-          shouldBeHidden = true;
-          break;
+        if (shouldBeHidden) {
+          bookFiltered.classList.add('hidden');
+        } else {
+          bookFiltered.classList.remove('hidden');
         }
       }
+    }
 
-      const bookFiltered = document.querySelector(`[data-id="${book.id}"]`);
-
-      if (shouldBeHidden) {
-        bookFiltered.classList.add('hidden');
-      } else {
-        bookFiltered.classList.remove('hidden');
-      }
+    determineRatingBgc(rating){
+      if (rating <= 6)
+        return 'linear-gradient(to bottom,  #fefcea 0%, #f1da36 100%)';
+      else if (rating > 6 && rating <= 8)
+        return 'linear-gradient(to bottom, #b4df5b 0%,#b4df5b 100%)';
+      else if (rating > 8 && rating <= 9)
+        return 'linear-gradient(to bottom, #299a0b 0%, #299a0b 100%)';
+      else if (rating > 9)
+        return 'linear-gradient(to bottom, #ff0084 0%,#ff0084 100%)';
     }
   }
 
-  function determineRatingBgc(rating){
-    if (rating <= 6)
-      return 'linear-gradient(to bottom,  #fefcea 0%, #f1da36 100%)';
-    else if (rating > 6 && rating <= 8)
-      return 'linear-gradient(to bottom, #b4df5b 0%,#b4df5b 100%)';
-    else if (rating > 8 && rating <= 9)
-      return 'linear-gradient(to bottom, #299a0b 0%, #299a0b 100%)';
-    else if (rating > 9)
-      return 'linear-gradient(to bottom, #ff0084 0%,#ff0084 100%)';
-  }
-   
-  render();
-  initActions();
+  const app = new BooksList();
+  console.log(app);
 }
